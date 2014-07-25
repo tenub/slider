@@ -1,5 +1,6 @@
 .sass-cache
 assets
 build
+doc
 node_modules
 src/css

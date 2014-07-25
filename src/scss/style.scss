@@ -1,6 +1,11 @@
 @import 'includes/base';
 
+body {
+	background: #efefef;
+}
+
 #slider {
-	width: 50%;
+	width: 50em;
 	margin: 0 auto;
+	background: #fff;
 }

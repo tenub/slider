@@ -76,7 +76,7 @@ module.exports = function (grunt) {
 		},
 		'jsdoc': {
 			assets: {
-				src: ['src/js/*.js'],
+				src: ['src/js/app/*.js'],
 				options: {
 					destination: 'doc'
 				}
