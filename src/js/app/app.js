@@ -42,22 +42,27 @@ define(['jquery'], function($) {
 
 		init: function() {
 
-			var self = this;
+			var self = this,
+				slides = {};
 
 			// wrap slides in a viewport and container
 			$(self.element)
-				.wrap('<div class="sViewport"/>')
-				.wrap('<div class="sContainer"/>');
+				.wrapInner('<div class="slider_container"/>')
+				.wrapInner('<div class="slider_viewport"/>');
 
-			// cache slides as direct descendants of container
-			self.slides = $(self.element).children();
-			// cache number of slides
-			self.size = self.slides.length;
+			// cache viewport
+			self.viewport = $(self.element).find('.slider_viewport');
 			// cache container
-			self.container = $(self.element).parent();
+			self.container = $(self.element).find('.slider_container');
+			// cache slides as direct descendants of container
+			self._slides = self.container.children();
+			// cache number of slides
+			self.size = self._slides.length;
 
 			// set initial slide
 			self.n = self._setStart(self.options.start);
+			// set initial html
+			self._initHtml();
 			// show initial slide
 			self.goTo(self.n);
 			// bind all event handlers
@@ -137,6 +142,30 @@ define(['jquery'], function($) {
 		},
 
 		/**
+		 * Define container content elements and set initial slide content
+		 * @private
+		 */
+		_initHtml: function() {
+
+			var self = this;
+
+			self.container
+				.html('')
+				.append(
+					$('<div class="prev"/>'),
+					$('<div class="curr"/>'),
+					$('<div class="next"/>')
+				);
+
+			self.slides = self.container.children();
+
+			self._setSlideHtml(self.n);
+
+			return self;
+
+		},
+
+		/**
 		 * Move slider to a specified slide index
 		 * @private
 		 * @param {integer} n - Ending zero-based slide index
@@ -145,7 +174,11 @@ define(['jquery'], function($) {
 
 			var self = this;
 
+			if (self.n !== n)
+				self._transition(self.n, n);
+
 			self.n = n;
+
 			self._redrawSlider(self.n);
 
 			return self;
@@ -161,7 +194,7 @@ define(['jquery'], function($) {
 
 			var self = this;
 
-			self._setSlidePos(n);
+			self._setSlideCss(n);
 			self._setContainerSize(n);
 
 			return self;
@@ -175,15 +208,18 @@ define(['jquery'], function($) {
 		 */
 		_setContainerSize: function(n) {
 
-			var self = this;
+			var self = this,
+				sWidth = 0;
 
-			console.log(self.container);
+			self.slides.each(function(i) {
+				sWidth += $(this).width();
+			});
+
+			self.viewport
+				.height(self.container.find('.curr').height())
 
 			self.container
-				.height(self.slides
-					.eq(n)
-					.height()
-				);
+				.width(sWidth);
 
 			return self;
 
@@ -193,18 +229,39 @@ define(['jquery'], function($) {
 		 * Set all slide widths to container width
 		 * @private
 		 */
-		_setSlidePos: function(n) {
+		_setSlideCss: function(n) {
 
 			var self = this;
 
 			self.slides.each(function(i) {
 
 				$(this).css({
-					width: self.container.width() + 'px'
+					width: $(self.element).width() + 'px'
 					/* left: '+=' + position + 'px' */
 				});
 
 			});
+
+			return self;
+
+		},
+
+		/**
+		 * Set container html based on new slide index
+		 * @private
+		 * @param {integer} n - New slide index
+		 */
+		_setSlideHtml: function(n) {
+
+			var self = this
+				_prev = (n === 0) ? self._slides.eq(self.size - 1).html() : self._slides.eq(n - 1).html(),
+				_curr = self._slides.eq(n).html(),
+				_next = (n === self.size - 1) ? self._slides.eq(0).html() : self._slides.eq(n + 1).html();
+
+			self.container.find('.prev')
+				.html(_prev)
+				.next().html(_curr)
+				.next().html(_next);
 
 			return self;
 
@@ -247,15 +304,28 @@ define(['jquery'], function($) {
 		},
 
 		/**
-		 * Show slide at specified index and hide its siblings
+		 * Transition slide elements and set new content
 		 * @private
-		 * @param {integer} n - Resulting zero-based slide index
+		 * @param {integer} n - Resulting zero-based slide index 
 		 */
-		_showSlide: function(n) {
+		_transition: function(cur, nxt) {
 
-			var self = this;
+			var self = this,
+				diff,
+				dir,
+				$prev = self.container.find('.prev'),
+				$curr = self.container.find('.curr'),
+				$next = self.container.find('.next');
 
-			//
+			// calculate the shortest path to travel and determine which direction
+			diff = nxt - cur;
+			dir = (diff < 0) ? -1 : 1;
+
+			$curr.css({
+				left: $curr.css('left') - dir * Math.abs(diff)
+			})
+
+			self._setSlideHtml(nxt);
 
 			return self;
 

@@ -1,15 +1,25 @@
 .slider {
-	> * {
-		position: absolute;
-	}
-}
-
-.sViewport {
-	overflow: hidden;
-	.sContainer {
-		position: absolute;
-		top: 0;
-		left: 0;
-		transition: left 0.5s;
+	.slider_viewport {
+		position: relative;
+		overflow: hidden;
+		.slider_container {
+			position: absolute;
+			top: 0;
+			left: -100%;
+			height: 100%;
+			transition: left 0.5s;
+			> * {
+				position: absolute;
+			}
+			.prev {
+				left: 0;
+			}
+			.curr {
+				left: 33.33%;
+			}
+			.next {
+				left: 66.67%;
+			}
+		}
 	}
 }
