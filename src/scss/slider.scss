@@ -2,23 +2,20 @@
 	.slider_viewport {
 		position: relative;
 		overflow: hidden;
+		transition: height 0.5s;
 		.slider_container {
-			position: absolute;
-			top: 0;
-			left: -100%;
 			height: 100%;
-			transition: left 0.5s;
 			> * {
 				position: absolute;
 			}
 			.prev {
-				left: 0;
+				left: -100%;
 			}
 			.curr {
-				left: 33.33%;
+				left: 0;
 			}
 			.next {
-				left: 66.67%;
+				left: 100%;
 			}
 		}
 	}

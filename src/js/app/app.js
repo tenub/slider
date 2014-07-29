@@ -76,12 +76,13 @@ define(['jquery'], function($) {
 		 */
 		next: function() {
 
-			var self = this;
+			var self = this,
+				n = 0;
 
-			if (self.n === self.size - 1)
-				self._moveTo(0);
-			else
-				self._moveTo(self.n + 1)
+			if (self.n !== self.size - 1)
+				n = self.n + 1;
+
+			self._moveTo(n, 'next');
 
 			return self;
 
@@ -93,12 +94,13 @@ define(['jquery'], function($) {
 		 */
 		prev: function() {
 
-			var self = this;
+			var self = this,
+				n = self.size - 1;
 
-			if (self.n === 0)
-				self._moveTo(self.size - 1);
-			else
-				self._moveTo(self.n - 1)
+			if (self.n !== 0)
+				n = self.n - 1;
+
+			self._moveTo(n, 'prev')
 
 			return self;
 
@@ -120,6 +122,12 @@ define(['jquery'], function($) {
 		},
 
 		/**
+		 * Internal property used to indicate if the slider is currently in a transition
+		 * @private
+		 */
+		_isAnimated: false,
+
+		/**
 		 * Bind slider event handlers
 		 * @private
 		 */
@@ -131,9 +139,33 @@ define(['jquery'], function($) {
 				self._redrawSlider(self.n)
 			});
 
-			self.slides.click(function() {
+			self.container.on('click', '.curr', function() {
 
 				self.next();
+
+			});
+
+			$(document).keydown(function(e) {
+
+				switch(e.which) {
+
+					case 37: self.prev();
+					break;
+
+					case 38: self.next();
+					break;
+
+					case 39: self.next();
+					break;
+
+					case 40: self.prev();
+					break;
+
+					default: return;
+
+				}
+
+				e.preventDefault();
 
 			});
 
@@ -152,9 +184,9 @@ define(['jquery'], function($) {
 			self.container
 				.html('')
 				.append(
-					$('<div class="prev"/>'),
-					$('<div class="curr"/>'),
-					$('<div class="next"/>')
+					$('<div class="prev"/>').css('transition', 'left ' + (self.options.movetime / 1000) + 's'),
+					$('<div class="curr"/>').css('transition', 'left ' + (self.options.movetime / 1000) + 's'),
+					$('<div class="next"/>').css('transition', 'left ' + (self.options.movetime / 1000) + 's')
 				);
 
 			self.slides = self.container.children();
@@ -170,16 +202,12 @@ define(['jquery'], function($) {
 		 * @private
 		 * @param {integer} n - Ending zero-based slide index
 		 */
-		_moveTo: function(n) {
+		_moveTo: function(n, dir) {
 
 			var self = this;
 
 			if (self.n !== n)
-				self._transition(self.n, n);
-
-			self.n = n;
-
-			self._redrawSlider(self.n);
+				self._transition(self.n, n, dir);
 
 			return self;
 
@@ -237,7 +265,6 @@ define(['jquery'], function($) {
 
 				$(this).css({
 					width: $(self.element).width() + 'px'
-					/* left: '+=' + position + 'px' */
 				});
 
 			});
@@ -259,9 +286,23 @@ define(['jquery'], function($) {
 				_next = (n === self.size - 1) ? self._slides.eq(0).html() : self._slides.eq(n + 1).html();
 
 			self.container.find('.prev')
-				.html(_prev)
-				.next().html(_curr)
-				.next().html(_next);
+				.html(_prev);
+			self.container.find('.curr')
+				.html(_curr);
+			self.container.find('.next')
+				.html(_next);
+
+			self.n = n;
+
+			self._redrawSlider(self.n);
+
+			self.slides.off();
+
+			self.container.children().off().click(function() {
+
+				self.next();
+
+			});
 
 			return self;
 
@@ -308,24 +349,40 @@ define(['jquery'], function($) {
 		 * @private
 		 * @param {integer} n - Resulting zero-based slide index 
 		 */
-		_transition: function(cur, nxt) {
+		_transition: function(cur, nxt, dir) {
 
 			var self = this,
-				diff,
-				dir,
 				$prev = self.container.find('.prev'),
 				$curr = self.container.find('.curr'),
 				$next = self.container.find('.next');
 
-			// calculate the shortest path to travel and determine which direction
-			diff = nxt - cur;
-			dir = (diff < 0) ? -1 : 1;
+			if (self._isAnimated)
+				return;
 
-			$curr.css({
-				left: $curr.css('left') - dir * Math.abs(diff)
-			})
+			self._isAnimated = true;
+
+			if (typeof dir === 'undefined') {
+				//
+			} else if (dir === 'next') {
+				$prev.removeClass('prev').hide().addClass('next');
+				$curr.removeClass('curr').addClass('prev');
+				$next.removeClass('next').addClass('curr');
+			} else if (dir === 'prev') {
+				$prev.removeClass('prev').addClass('curr');
+				$curr.removeClass('curr').addClass('next');
+				$next.removeClass('next').hide().addClass('prev');
+			}
 
 			self._setSlideHtml(nxt);
+
+			$curr.off().one('transitionend webkitTransitionEnd oTransitionEnd otransitionend MSTransitionEnd', function() {
+
+				self._isAnimated = false;
+
+				$prev.show();
+				$next.show();
+
+			});
 
 			return self;
 
