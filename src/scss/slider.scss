@@ -1,8 +1,8 @@
 .slider {
+	visibility: hidden;
 	.slider_viewport {
 		position: relative;
 		overflow: hidden;
-		transition: height 0.5s;
 		.slider_container {
 			height: 100%;
 			> * {

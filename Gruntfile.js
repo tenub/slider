@@ -76,7 +76,7 @@ module.exports = function (grunt) {
 		},
 		'jsdoc': {
 			assets: {
-				src: ['src/js/app/*.js'],
+				src: ['src/js/plugin/*.js'],
 				options: {
 					destination: 'doc'
 				}
@@ -89,9 +89,9 @@ module.exports = function (grunt) {
 			},
 			js: {
 				src: [
-					'src/js/app/*.js'
+					'src/js/plugin/*.js'
 				],
-				dest: 'build/js/app.js'
+				dest: 'build/js/plugin.js'
 			}
 		},
 		'autoprefixer': {
@@ -111,8 +111,8 @@ module.exports = function (grunt) {
 		'uglify': {
 			js: {
 				files: {
-					'assets/js/app.min.js': [
-						'build/js/app.js'
+					'assets/js/plugin.min.js': [
+						'build/js/plugin.js'
 					]
 				}
 			}

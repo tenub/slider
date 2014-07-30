@@ -65,8 +65,18 @@ define(['jquery'], function($) {
 			self._initHtml();
 			// show initial slide
 			self.goTo(self.n);
+
+			// call autoplay if option is enabled
+			if (self.options.autoplay === 'on')
+				self.autoplay();
+
+			// bind all custom events
+			self._bindEvents();
 			// bind all event handlers
 			self._bindHandlers();
+
+			// all initialization has occurred so trigger the "loaded" event
+			$(self.element).trigger('loaded.slider');
 
 		},
 
@@ -100,7 +110,28 @@ define(['jquery'], function($) {
 			if (self.n !== 0)
 				n = self.n - 1;
 
-			self._moveTo(n, 'prev')
+			self._moveTo(n, 'prev');
+
+			return self;
+
+		},
+
+		/**
+		 * Public method to start autoplay once slider is initialized
+		 */
+		autoplay: function() {
+
+			var self = this,
+				n = 0;
+
+			self.ival = window.setInterval(function() {
+				
+				if (self.n !== self.size - 1)
+					n = self.n + 1;
+
+				self.goTo(n);
+
+			}, self.options.stoptime);
 
 			return self;
 
@@ -126,6 +157,36 @@ define(['jquery'], function($) {
 		 * @private
 		 */
 		_isAnimated: false,
+
+		/**
+		 * Bind custom slider events for extensibility
+		 * @private
+		 */
+		_bindEvents: function() {
+
+			var self = this;
+
+			$(self.element).on('loaded.slider', function(e) {
+
+				$(self.element).css('visibility', 'visible');
+
+			});
+
+			$(self.element).on('prev.slider', function(e, n) {
+
+				//console.log('prev');
+
+			});
+
+			$(self.element).on('next.slider', function(e, n) {
+
+				//console.log('next');
+
+			});
+
+			return self;
+
+		},
 
 		/**
 		 * Bind slider event handlers
@@ -245,6 +306,7 @@ define(['jquery'], function($) {
 
 			self.viewport
 				.height(self.container.find('.curr').height())
+				.css('transition', 'height ' + (self.options.movetime / 1000) + 's')
 
 			self.container
 				.width(sWidth);
@@ -359,15 +421,22 @@ define(['jquery'], function($) {
 			if (self._isAnimated)
 				return;
 
+			if (typeof self.ival === 'undefined')
+				return;
+			else
+				clearInterval(self.ival);
+
 			self._isAnimated = true;
 
 			if (typeof dir === 'undefined') {
 				//
 			} else if (dir === 'next') {
+				$(self.element).trigger('next');
 				$prev.removeClass('prev').hide().addClass('next');
 				$curr.removeClass('curr').addClass('prev');
 				$next.removeClass('next').addClass('curr');
 			} else if (dir === 'prev') {
+				$(self.element).trigger('prev');
 				$prev.removeClass('prev').addClass('curr');
 				$curr.removeClass('curr').addClass('next');
 				$next.removeClass('next').hide().addClass('prev');
@@ -381,6 +450,8 @@ define(['jquery'], function($) {
 
 				$prev.show();
 				$next.show();
+
+				$(self.element).trigger('end.trans.slider');
 
 			});
 

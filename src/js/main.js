@@ -7,10 +7,10 @@ require.config({
 	}
 });
 
-require(['jquery', 'app.min'], function($, app) {
+require(['jquery', 'plugin.min'], function($, plugin) {
 	$('#slider').slider({
 		pagination: 'on',
-		autoplay: 'off',
+		autoplay: 'on',
 		movetime: 500
 	});
 });
