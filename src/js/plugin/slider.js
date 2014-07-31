@@ -1,3 +1,5 @@
+/*jslint nomen: true */
+
 /**
  * @file		slider
  * @author		Joseph Chrzan jchrzan1@gmail.com
@@ -7,7 +9,7 @@
 
 define(['jquery'], function($) {
 
-	var pluginName = 'slider';
+	var pluginName = 'slider',
 
 	/**
 	 * @namespace
@@ -17,7 +19,7 @@ define(['jquery'], function($) {
 	 * @property {integer} movetime - time in milliseconds for any transition
 	 * @property {integer} stoptime - time in milliseconds to pause on each slide if autoplay is enabled
 	 */
-	var defaults = {
+	defaults = {
 		pagination: 'on',
 		autoplay: 'on',
 		movetime: 500,
@@ -42,8 +44,7 @@ define(['jquery'], function($) {
 
 		init: function() {
 
-			var self = this,
-				slides = {};
+			var self = this;
 
 			// wrap slides in a viewport and container
 			$(self.element)
@@ -67,8 +68,9 @@ define(['jquery'], function($) {
 			self.goTo(self.n);
 
 			// call autoplay if option is enabled
-			if (self.options.autoplay === 'on')
+			if (self.options.autoplay === 'on') {
 				self.autoplay();
+			}
 
 			// bind all custom events
 			self._bindEvents();
@@ -89,8 +91,9 @@ define(['jquery'], function($) {
 			var self = this,
 				n = 0;
 
-			if (self.n !== self.size - 1)
+			if (self.n !== self.size - 1) {
 				n = self.n + 1;
+			}
 
 			self._moveTo(n, 'next');
 
@@ -107,8 +110,9 @@ define(['jquery'], function($) {
 			var self = this,
 				n = self.size - 1;
 
-			if (self.n !== 0)
+			if (self.n !== 0) {
 				n = self.n - 1;
+			}
 
 			self._moveTo(n, 'prev');
 
@@ -121,15 +125,17 @@ define(['jquery'], function($) {
 		 */
 		autoplay: function() {
 
-			var self = this,
-				n = 0;
+			var self = this, n;
 
 			self.ival = window.setInterval(function() {
-				
-				if (self.n !== self.size - 1)
-					n = self.n + 1;
 
-				self.goTo(n);
+				n = 0;
+				
+				if (self.n !== self.size - 1) {
+					n = self.n + 1;
+				}
+
+				self._moveTo(n, 'auto');
 
 			}, self.options.stoptime);
 
@@ -166,21 +172,9 @@ define(['jquery'], function($) {
 
 			var self = this;
 
-			$(self.element).on('loaded.slider', function(e) {
+			$(self.element).on('loaded.slider', function() {
 
 				$(self.element).css('visibility', 'visible');
-
-			});
-
-			$(self.element).on('prev.slider', function(e, n) {
-
-				//console.log('prev');
-
-			});
-
-			$(self.element).on('next.slider', function(e, n) {
-
-				//console.log('next');
 
 			});
 
@@ -197,7 +191,7 @@ define(['jquery'], function($) {
 			var self = this;
 
 			$(window).resize(function() {
-				self._redrawSlider(self.n)
+				self._redrawSlider();
 			});
 
 			self.container.on('click', '.curr', function() {
@@ -240,14 +234,23 @@ define(['jquery'], function($) {
 		 */
 		_initHtml: function() {
 
-			var self = this;
+			var self = this,
+				$prev = $('<div class="prev"/>'),
+				$curr = $('<div class="curr"/>'),
+				$next = $('<div class="next"/>');
+
+			if (self.options.movetime > 0) {
+				$prev.css('transition', 'left ' + (self.options.movetime / 1000) + 's');
+				$curr.css('transition', 'left ' + (self.options.movetime / 1000) + 's');
+				$next.css('transition', 'left ' + (self.options.movetime / 1000) + 's');
+			}
 
 			self.container
 				.html('')
 				.append(
-					$('<div class="prev"/>').css('transition', 'left ' + (self.options.movetime / 1000) + 's'),
-					$('<div class="curr"/>').css('transition', 'left ' + (self.options.movetime / 1000) + 's'),
-					$('<div class="next"/>').css('transition', 'left ' + (self.options.movetime / 1000) + 's')
+					$prev,
+					$curr,
+					$next
 				);
 
 			self.slides = self.container.children();
@@ -267,24 +270,65 @@ define(['jquery'], function($) {
 
 			var self = this;
 
-			if (self.n !== n)
-				self._transition(self.n, n, dir);
+			if (self.n !== n) {
+				self._transition(n, dir);
+			}
 
 			return self;
 
 		},
 
 		/**
-		 * Resize all slide widths and container height for specified index
+		 * Parse slide number and set it to the slider's opposite limit if it goes out of bounds
+		 * Used to set the next slide index
 		 * @private
-		 * @param {integer} n - Current zero-based slide index
+		 * @param {string} n - Slide integer in string format
 		 */
-		_redrawSlider: function(n) {
+		_parseN: function(n) {
 
 			var self = this;
 
-			self._setSlideCss(n);
-			self._setContainerSize(n);
+			n = parseInt(n, 10) || 0;
+
+			if (n > self.size) {
+				return self.size - 1;
+			}
+
+			if (n < 0) {
+				return 0;
+			}
+
+			return n;
+
+		},
+
+		/**
+		 * Resize all slide widths and container height for specified index
+		 * @private
+		 */
+		_redrawSlider: function() {
+
+			var self = this;
+
+			self._setSlideCss();
+			self._setContainerSize();
+
+			return self;
+
+		},
+
+		/**
+		 * Since JavaScript does not modify a timeout/interval id once it is cleared there is no way to tell if it was ever cleared
+		 * This simple function fixes the above issue
+		 * @private
+		 * @param {integer} id - Id of timeout/interval that needs to be cleared and reset
+		 */
+		_resetInterval: function(id) {
+
+			var self = this;
+
+			window.clearInterval(id);
+			self.ival = false;
 
 			return self;
 
@@ -295,18 +339,22 @@ define(['jquery'], function($) {
 		 * @private
 		 * @param {integer} n - Current zero-based slide index
 		 */
-		_setContainerSize: function(n) {
+		_setContainerSize: function() {
 
 			var self = this,
 				sWidth = 0;
 
-			self.slides.each(function(i) {
+			self.slides.each(function() {
 				sWidth += $(this).width();
 			});
 
 			self.viewport
-				.height(self.container.find('.curr').height())
-				.css('transition', 'height ' + (self.options.movetime / 1000) + 's')
+				.height(self.container.find('.curr').height());
+
+			if (self.options.movetime > 0) {
+				self.viewport
+					.css('transition', 'height ' + (self.options.movetime / 1000) + 's');
+			}
 
 			self.container
 				.width(sWidth);
@@ -319,11 +367,11 @@ define(['jquery'], function($) {
 		 * Set all slide widths to container width
 		 * @private
 		 */
-		_setSlideCss: function(n) {
+		_setSlideCss: function() {
 
 			var self = this;
 
-			self.slides.each(function(i) {
+			self.slides.each(function() {
 
 				$(this).css({
 					width: $(self.element).width() + 'px'
@@ -342,7 +390,7 @@ define(['jquery'], function($) {
 		 */
 		_setSlideHtml: function(n) {
 
-			var self = this
+			var self = this,
 				_prev = (n === 0) ? self._slides.eq(self.size - 1).html() : self._slides.eq(n - 1).html(),
 				_curr = self._slides.eq(n).html(),
 				_next = (n === self.size - 1) ? self._slides.eq(0).html() : self._slides.eq(n + 1).html();
@@ -356,7 +404,7 @@ define(['jquery'], function($) {
 
 			self.n = n;
 
-			self._redrawSlider(self.n);
+			self._redrawSlider();
 
 			self.slides.off();
 
@@ -375,34 +423,25 @@ define(['jquery'], function($) {
 		 * @private
 		 * @param {mixed} n - Slide index
 		 */
-		_setStart: function(start) {
+		_setStart: function(n) {
 
 			var self = this;
 
 			if (typeof n === 'string' || typeof n === 'number') {
+
 				n = n.toString();
-				if (n.length <= 2)
-					return ParseN(n);
-				else if (n === 'last' || n === 'end')
+
+				if (n.length <= 2) {
+					return self._parseN(n);
+				}
+
+				if (n === 'last' || n === 'end') {
 					return self.size - 1;
-				else
-					return 0;
-			} else {
-				return 0;
+				}
+
 			}
 
-			function ParseN(n) {
-
-				n = parseInt(n) || 0;
-
-				if (n > self.size)
-					return self.size - 1;
-				else if (n < 0)
-					return 0;
-				else
-					return n;
-
-			}
+			return 0;
 
 		},
 
@@ -411,49 +450,112 @@ define(['jquery'], function($) {
 		 * @private
 		 * @param {integer} n - Resulting zero-based slide index 
 		 */
-		_transition: function(cur, nxt, dir) {
+		_transition: function(next, move) {
 
 			var self = this,
 				$prev = self.container.find('.prev'),
 				$curr = self.container.find('.curr'),
 				$next = self.container.find('.next');
 
-			if (self._isAnimated)
+			if (self._isAnimated) {
 				return;
-
-			if (typeof self.ival === 'undefined')
-				return;
-			else
-				clearInterval(self.ival);
+			}
 
 			self._isAnimated = true;
 
-			if (typeof dir === 'undefined') {
-				//
-			} else if (dir === 'next') {
-				$(self.element).trigger('next');
-				$prev.removeClass('prev').hide().addClass('next');
-				$curr.removeClass('curr').addClass('prev');
-				$next.removeClass('next').addClass('curr');
-			} else if (dir === 'prev') {
-				$(self.element).trigger('prev');
-				$prev.removeClass('prev').addClass('curr');
-				$curr.removeClass('curr').addClass('next');
-				$next.removeClass('next').hide().addClass('prev');
+			if (move === 'auto' || move === 'next') {
+				self._transitionNext($prev, $curr, $next);
+			} else if (move === 'prev') {
+				self._transitionPrev($prev, $curr, $next);
 			}
 
-			self._setSlideHtml(nxt);
+			if (self.ival !== undefined && (move === 'prev' || move === 'next')) {
+				self._resetInterval(self.ival);
+			}
 
-			$curr.off().one('transitionend webkitTransitionEnd oTransitionEnd otransitionend MSTransitionEnd', function() {
+			self._setSlideHtml(next);
 
-				self._isAnimated = false;
+			if (self.options.movetime > 0) {
 
-				$prev.show();
-				$next.show();
+				$curr.off().one('transitionend webkitTransitionEnd oTransitionEnd otransitionend MSTransitionEnd', function() {
 
-				$(self.element).trigger('end.trans.slider');
+					self._transitionEnd($prev, $next);
 
-			});
+				});
+
+			} else {
+
+				self._transitionEnd($prev, $next);
+
+			}
+
+			return self;
+
+		},
+
+		/**
+		 * Called at the end of a slide transition
+		 * Triggers the end.trans.slider custom event
+		 * @private
+		 * @param {object} $prev - jquery object of previous slide
+		 * @param {object} $next - jquery object of next slide
+		 */
+		_transitionEnd: function($prev, $next) {
+
+			var self = this;
+
+			self._isAnimated = false;
+
+			$prev.show();
+			$next.show();
+
+			if (self.ival !== undefined && self.ival === false) {
+				self.autoplay();
+			}
+
+			$(self.element).trigger('end.trans.slider');
+
+			return self;
+
+		},
+
+		/**
+		 * Transition slider to next slide and set necessary element states
+		 * Triggers the next.slider custom event
+		 * @private
+		 * @param {object} $prev - jquery object of previous slide
+		 * @param {object} $curr - jquery object of current slide
+		 * @param {object} $next - jquery object of next slide
+		 */
+		_transitionNext: function($prev, $curr, $next) {
+
+			var self = this;
+
+			$(self.element).trigger('next.slider');
+			$prev.removeClass('prev').hide().addClass('next');
+			$curr.removeClass('curr').addClass('prev');
+			$next.removeClass('next').addClass('curr');
+
+			return self;
+
+		},
+
+		/**
+		 * Transition slider to previous slide and set necessary element states
+		 * Triggers the prev.slider custom event
+		 * @private
+		 * @param {object} $prev - jquery object of previous slide
+		 * @param {object} $curr - jquery object of current slide
+		 * @param {object} $next - jquery object of next slide
+		 */
+		_transitionPrev: function($prev, $curr, $next) {
+
+			var self = this;
+
+			$(self.element).trigger('prev.slider');
+			$prev.removeClass('prev').addClass('curr');
+			$curr.removeClass('curr').addClass('next');
+			$next.removeClass('next').hide().addClass('prev');
 
 			return self;
 
@@ -465,8 +567,9 @@ define(['jquery'], function($) {
 
 		return this.each(function() {
 
-			if (!$.data(this, 'plugin_' + pluginName))
+			if (!$.data(this, 'plugin_' + pluginName)) {
 				$.data(this, 'plugin_' + pluginName, new Slider(this, options));
+			}
 
 		});
 
