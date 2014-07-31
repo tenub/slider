@@ -9,8 +9,8 @@ require.config({
 
 require(['jquery', 'plugin.min'], function($, plugin) {
 	$('#slider').slider({
-		pagination: 'on',
-		autoplay: 'on',
+		pagination: 'off',
+		autoplay: 'off',
 		movetime: 500
 	});
 });

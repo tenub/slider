@@ -20,7 +20,8 @@ define(['jquery'], function($) {
 	 * @property {integer} stoptime - time in milliseconds to pause on each slide if autoplay is enabled
 	 */
 	defaults = {
-		pagination: 'on',
+		pagination: 'off',
+		navigation: 'on',
 		autoplay: 'on',
 		movetime: 500,
 		stoptime: 2000
@@ -70,6 +71,16 @@ define(['jquery'], function($) {
 			// call autoplay if option is enabled
 			if (self.options.autoplay === 'on') {
 				self.autoplay();
+			}
+
+			// call navigation if option is enabled
+			if (self.options.navigation === 'on') {
+				self._navigation();
+			}
+
+			// call pagination if option is enabled
+			if (self.options.pagination === 'on') {
+				self._pagination();
 			}
 
 			// bind all custom events
@@ -150,9 +161,10 @@ define(['jquery'], function($) {
 		 */
 		goTo: function(n) {
 
-			var self = this;
+			var self = this,
+				dir = ((n - self.n) < 0) ? 'prev' : 'next';
 
-			self._moveTo(n);
+			self._moveTo(n, dir);
 
 			return self;
 
@@ -192,12 +204,6 @@ define(['jquery'], function($) {
 
 			$(window).resize(function() {
 				self._redrawSlider();
-			});
-
-			self.container.on('click', '.curr', function() {
-
-				self.next();
-
 			});
 
 			$(document).keydown(function(e) {
@@ -273,6 +279,78 @@ define(['jquery'], function($) {
 			if (self.n !== n) {
 				self._transition(n, dir);
 			}
+
+			return self;
+
+		},
+
+		/**
+		 * Generate navigation and bind related events
+		 * @private
+		 */
+		_navigation: function() {
+
+			var self = this,
+				$icons;
+
+			$(self.element).append(
+				$('<div/>')
+					.addClass('navigation')
+					.append(
+						$('<i/>')
+							.addClass('fa fa-chevron-left')
+							.data('sl-dir', 'prev'),
+						$('<i/>')
+							.addClass('fa fa-chevron-right')
+							.data('sl-dir', 'next')
+					)
+			);
+
+			$(self.element).find('.navigation').on('click', 'i', function() {
+
+				var dir = $(this).data('sl-dir');
+
+				if (dir === 'prev') {
+					self.prev();
+				} else {
+					self.next();
+				}
+
+			});
+
+			return self;
+
+		},
+
+		/**
+		 * Generate pagination and bind related events
+		 * @private
+		 */
+		_pagination: function() {
+
+			var self = this,
+				$icons;
+
+			$(self.element).append(
+				$('<div/>')
+					.addClass('pagination')
+			);
+
+			for (var i=0; i<self.size; i++) {
+
+				$(self.element).find('.pagination')
+					.append(
+						$('<i/>')
+							.addClass('fa fa-circle')
+					)
+
+			}
+
+			$(self.element).find('.pagination').on('click', 'i', function() {
+
+				self.goTo($(this).index());
+
+			});
 
 			return self;
 
@@ -405,14 +483,6 @@ define(['jquery'], function($) {
 			self.n = n;
 
 			self._redrawSlider();
-
-			self.slides.off();
-
-			self.container.children().off().click(function() {
-
-				self.next();
-
-			});
 
 			return self;
 

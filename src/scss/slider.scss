@@ -1,5 +1,7 @@
 .slider {
+	position: relative;
 	visibility: hidden;
+	margin: 2.8rem auto;
 	.slider_viewport {
 		position: relative;
 		overflow: hidden;
@@ -16,6 +18,47 @@
 			}
 			.next {
 				left: 100%;
+			}
+		}
+	}
+	.navigation {
+		position: absolute;
+		top: 50%;
+		left: 0;
+		margin-top: -2rem;
+		width: 100%;
+		i {
+			position: absolute;
+			top: 0;
+			padding: .7rem;
+			font-size: 2rem;
+			cursor: pointer;
+			transition: all 0.2s;
+			&:hover {
+				color: #eee;
+				text-shadow: .1rem .1rem .4rem rgba(0, 0, 0, 0.6);
+				transition: all 0.2s;
+			}
+			&:first-child {
+				right: 100%;
+			}
+			&:last-child {
+				left: 100%;
+			}
+		}
+	}
+	.pagination {
+		position: absolute;
+		bottom: 100%;
+		left: 0;
+		width: 100%;
+		text-align: center;
+		i {
+			padding: .7rem;
+			font-size: 1.4rem;
+			cursor: pointer;
+			&:hover {
+				color: lighten(#000, 25%);
 			}
 		}
 	}
