@@ -1,5 +1,3 @@
-/*jslint nomen: true */
-
 /**
  * @file		slider
  * @author		Joseph Chrzan jchrzan1@gmail.com
